@@ -2,6 +2,24 @@
 
 **English** | [中文](./README.md)
 
+## Table of Contents
+
+- [Huntly](#huntly)
+  - [Table of Contents](#table-of-contents)
+  - [Screenshot](#screenshot)
+  - [Requirements](#requirements)
+  - [Usage](#usage)
+    - [Running the server side](#running-the-server-side)
+      - [Using the Server Installation Package](#using-the-server-installation-package)
+      - [Run with docker](#run-with-docker)
+      - [Run with the Java command](#run-with-the-java-command)
+      - [Install as Windows Service](#install-as-windows-service)
+    - [Install the browser extension](#install-the-browser-extension)
+    - [Browser extension settings](#browser-extension-settings)
+    - [Login and enjoy it](#login-and-enjoy-it)
+  - [Buy me a coffee](#buy-me-a-coffee)
+  - [Thanks to JetBrains support](#thanks-to-jetbrains-support)
+
 Huntly is a self-hosted information management tool, in simple terms, contains the following features.
 
 - RSS subscription and reading.
@@ -24,8 +42,17 @@ Huntly is a self-hosted information management tool, in simple terms, contains t
 ## Usage
 
 ### Running the server side
+You can run the server using one of the following methods.
 
-You can use docker or java to run the server.
+#### Using the Server Installation Package
+
+Download the installation package for your corresponding operating system from [Releases](https://github.com/lcomplete/huntly/releases), and run it after installation.
+
+If you encounter the error message `"Huntly.app" is damaged and can't be opened`. while installing software on macOS, it may be due to security settings restrictions in macOS. To solve this problem, please try the following command in Terminal:
+
+```sh
+sudo xattr -r -d com.apple.quarantine /YOUR_PATH/ChatGPT.app
+```
 
 #### Run with docker
 
@@ -44,29 +71,68 @@ Download the jar package from [Releases](https://github.com/lcomplete/huntly/rel
 After downloading, cd to the current directory from the command line and run it with the following Java command.
 
 ```sh
-java -Xms128m -Xmx1024m -jar huntly-server-0.1.0-SNAPSHOT.jar
+java -Xms128m -Xmx1024m -jar huntly-server.jar
 ```
 
 By default it runs on port 8080, you can open the [http://localhost:8080/](http://localhost:8080/) port for access, or if you need to use another port, such as port 80, you can run the following command.
 
 
 ```sh
-java -Xms128m -Xmx1024m -jar huntly-server-0.1.0-SNAPSHOT.jar --server.port=80
+java -Xms128m -Xmx1024m -jar huntly-server.jar --server.port=80
 ```
 
 Note that the Jar package name needs to be modified appropriately according to the downloaded package name.
 
+#### Install as Windows Service
+
+Create a new directory named Huntly, and perform the following operations in this directory.
+
+Download the jar package from [Releases](https://github.com/lcomplete/huntly/releases).
+
+Download [WinSW exe](https://github.com/winsw/winsw/releases) and rename it to `app.exe`.
+
+Create a new file named `app.xml` with the following content:
+
+```xml
+<service>
+  <id>huntly</id>
+  <name>huntly</name>
+  <description>huntly</description>
+  <executable>java</executable>
+  <arguments>-Xms128m -Xmx1024m -jar huntly-server.jar --server.port=8123</arguments>
+  <log mode="roll"></log>
+</service>
+```
+
+After successful startup, you can access [http://localhost:8123](http://localhost:8123).
+
+Open the terminal and run the command:
+
+```sh
+.\app.exe install .\app.xml
+```
+
+After executing the above command, Huntly has been installed as a Windows service and set to start automatically at boot. It is currently not started. Use the following command to start the service:
+
+```sh
+.\app.exe start .\app.xml
+```
+
+If you receive an error message that java cannot be executed, change the value of `executable` to the full path of `java.exe`.
+
+Other commands such as uninstall, stop, restart, status, refresh, customize are also supported. For specific usage instructions please refer to [https://github.com/winsw/winsw](https://github.com/winsw/winsw).
+
 ### Install the browser extension
 
-Note: The plugin is still under development and is not yet available on the Google Play Store.
+The plugin has been uploaded to the Chrome Web Store and can be directly installed from the [Huntly extension page on the Chrome Web Store](https://chrome.google.com/webstore/detail/huntly/cphlcmmpbdkadofgcedjgfblmiklbokm).
 
-Download the browser-extension.zip from [Releases](https://github.com/lcomplete/huntly/releases) and unpack it.
+If you want to use the latest features, you can download browser-extension.zip from [Releases](https://github.com/lcomplete/huntly/releases) and extract it.
 
-Manage the extension in your browser, enable developer mode, and load the unpacked extension.
+To manage extensions in your browser, enable developer mode and load the unpacked extension.
 
 ### Browser extension settings
 
-Click the huntly extension icon, choose to set huntly's server address, for example, when using the demo server, then set it to http://huntly.rom666.com:8000/, for the remote address, in formal use, it is highly recommended to use the https protocol, after all, the browsing history is quite private. If the server is running locally, then set it to the local address.
+Click the huntly extension icon, choose to set huntly's server address (home page url), for the remote address, in formal use, it is highly recommended to use the https protocol, after all, the browsing history is quite private. If the server is running locally, then set it to the local address.
 
 ### Login and enjoy it
 
@@ -75,3 +141,16 @@ When you open huntly website for the first time, you will be prompted to registe
 After registration, you will be automatically logged into the system, and the huntly extension will only send browsing history to the server if you are logged in.
 
 Enjoy it.
+
+## Buy me a coffee
+
+<p align="center">
+	<img height="360" src="static/images/wechat.JPG" />
+	<img height="360" src="static/images/zfb.JPG" />
+</p>
+
+## Thanks to JetBrains support
+
+<a href="https://www.jetbrains.com/?from=huntly">
+  <img src="static/images/jb_beam.png" height="200" />
+</a>

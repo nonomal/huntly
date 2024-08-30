@@ -12,6 +12,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * @author lcomplete
+ */
 @Component
 @Slf4j
 public class ColdDataClearTask {
@@ -24,7 +27,7 @@ public class ColdDataClearTask {
         this.pageService = pageService;
     }
 
-    @Scheduled(initialDelay = 1000 * 10, fixedDelay = 1000 * 60)
+    @Scheduled(initialDelay = 1000 * 60 * 5, fixedDelay = 1000 * 60 * 60 * 2)
     public void autoClearColdData() {
         log.info("auto clear cold data");
         GlobalSetting setting = settingService.getGlobalSetting();

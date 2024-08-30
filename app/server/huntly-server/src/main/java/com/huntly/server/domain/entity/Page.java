@@ -14,6 +14,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "page", indexes = {
         @Index(name = "idx_page_connector_id", columnList = "connector_id"),
+        @Index(name = "idx_page_url", columnList = "url"),
         @Index(name = "idx_page_connector_type", columnList = "connector_type"),
         @Index(name = "idx_page_content_type", columnList = "content_type"),
         @Index(name = "idx_page_folder_id", columnList = "folder_id"),
@@ -24,6 +25,7 @@ import java.time.Instant;
         @Index(name = "idx_page_last_read_at", columnList = "last_read_at DESC"),
         @Index(name = "idx_page_connected_at", columnList = "connected_at DESC"),
         @Index(name = "idx_page_created_at", columnList = "created_at DESC"),
+        @Index(name = "idx_page_unique_id", columnList = "page_unique_id"),
 })
 @DynamicUpdate
 public class Page implements Serializable {
@@ -67,6 +69,9 @@ public class Page implements Serializable {
 
     @Column(name = "author")
     private String author;
+    
+    @Column(name = "author_screen_name")
+    private String authorScreenName;
 
     @Column(name = "language")
     private String language;
@@ -85,6 +90,9 @@ public class Page implements Serializable {
 
     @Column(name = "read_cost_seconds")
     private Long readCostSeconds;
+    
+    @Column(name = "vote_score")
+    private Long voteScore;
 
     @Column(name = "created_at")
     private Instant createdAt;

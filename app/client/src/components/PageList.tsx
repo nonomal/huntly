@@ -2,7 +2,7 @@ import MagazineItem from "../components/MagazineItem";
 import {ApiResultOfint, PageControllerApiFactory, PageItem} from "../api";
 import {InfiniteData, QueryClient, useInfiniteQuery, useQueryClient} from "@tanstack/react-query";
 import {useInView} from "react-intersection-observer";
-import React, {useEffect, useState} from "react";
+import React, {ReactElement, useEffect, useState} from "react";
 import {AlertTitle, Button} from "@mui/material";
 import Loading from "./Loading";
 import {NavLabel} from "./Sidebar/NavLabels";
@@ -17,10 +17,11 @@ import {isDeepEqual} from "../common/objectUtils";
 import {setDocTitle} from "../common/docUtils";
 import {useSearchParams} from "react-router-dom";
 import {safeInt} from "../common/typeUtils";
-import {SORT_VALUE} from "../model";
+import {ContentType, SORT_VALUE} from "../model";
 import PageDetailModal from "./PageDetailModal";
+import Alert from "@mui/material/Alert";
 
-type PageListFilter = {
+export type PageListFilter = {
   asc?: boolean,
   connectorId?: number,
   connectorType?: number,
@@ -31,15 +32,19 @@ type PageListFilter = {
   readLater?: boolean,
   saveStatus?: 'ARCHIVED' | 'NOT_SAVED' | 'SAVED',
   sort?: SORT_VALUE,
-  contentType?: 'BROWSER_HISTORY' | 'MARKDOWN'| 'QUOTED_TWEET' | 'TWEET',
+  contentType?: ContentType,
   sourceId?: number,
   starred?: boolean,
   markRead?: boolean,
+  contentFilterType?: number,
+  startDate?: string,
+  endDate?: string,
 }
 
 interface PageListProps {
   filters?: PageListFilter
   navLabel?: NavLabel,
+  navLabelArea?: ReactElement,
   onMarkAllAsRead?: () => AxiosPromise<ApiResultOfint>,
   buttonOptions?: ButtonOptions,
   showMarkReadOption?: boolean,
@@ -50,6 +55,7 @@ const PageList = (props: PageListProps) => {
   const {
     buttonOptions,
     navLabel,
+    navLabelArea,
     onMarkAllAsRead,
     showMarkReadOption
   } = props;
@@ -82,28 +88,46 @@ const PageList = (props: PageListProps) => {
     refetch
   } = useInfiniteQuery(
     queryKey,
-    async ({pageParam = {lastRecordAt: undefined, firstRecordAt: undefined}}) => {
+    async ({
+             pageParam = {
+               lastRecordAt: undefined,
+               firstRecordAt: undefined,
+               firstVoteScore: undefined,
+               lastVoteScore: undefined
+             }
+           }) => {
       const res = await PageControllerApiFactory().listPageItemsUsingGET(
         filters.asc,
         filters.connectorId,
         filters.connectorType,
+        filters.contentFilterType,
         filters.contentType,
         pageSize,
-        pageParam.firstRecordAt,
+        filters.endDate,
+        pageParam.firstRecordAt || undefined,
+        pageParam.firstVoteScore || undefined,
         filters.folderId,
-        pageParam.lastRecordAt,
+        pageParam.lastRecordAt || undefined,
+        pageParam.lastVoteScore || undefined,
         filters.markRead,
         filters.readLater,
         filters.saveStatus,
         filters.sort,
         filters.sourceId,
-        filters.starred
+        filters.starred,
+        filters.startDate
       );
       return res.data
     },
     {
-      getPreviousPageParam: (firstPage) => firstPage && firstPage.length > 0 ? {firstRecordAt: firstPage[0].recordAt} : {},
-      getNextPageParam: (lastPage) => lastPage && lastPage.length > 0 && lastPage.length >= pageSize ? {lastRecordAt: lastPage[lastPage.length - 1].recordAt} : undefined,
+      getPreviousPageParam: (firstPage) =>
+        firstPage && firstPage.length > 0
+          ? (filters.sort === 'VOTE_SCORE' ? {firstVoteScore: firstPage[0].voteScore} : {firstRecordAt: firstPage[0].recordAt})
+          : {},
+      getNextPageParam: (lastPage) =>
+        lastPage && lastPage.length > 0 && lastPage.length >= pageSize
+          ? (filters.sort === 'VOTE_SCORE' ? {lastVoteScore: lastPage[lastPage.length - 1].voteScore} : {lastRecordAt: lastPage[lastPage.length - 1].recordAt})
+          : undefined,
     },
   );
 
@@ -226,11 +250,11 @@ const PageList = (props: PageListProps) => {
     <>
       <PageDetailModal selectedPageId={selectedPageId} operateSuccess={operateSuccess} onClose={closePageDetail}/>
       <SubHeader navLabel={navLabel} onMarkListAsRead={markListAsRead} onMarkAllAsRead={markAllAsRead}
-                 onRefresh={refreshPages}
+                 onRefresh={refreshPages} navLabelArea={navLabelArea}
                  buttonOptions={buttonOptions}/>
       <div className={'flex flex-auto'}>
         <div className="p-2 flex flex-col grow items-center">
-          <div className={'w-[720px] flex flex-col items-center'}>
+          <div className={'page-list w-[720px] flex flex-col items-center'}>
             {showDoneTip && <div className={'w-full'}>
                 <TransitionAlert severity="success" color="info">
                     <AlertTitle>Well done!</AlertTitle>
@@ -242,6 +266,24 @@ const PageList = (props: PageListProps) => {
             {error && <p>Oops, something was broken. <div>{error.toString()}</div></p>}
             {!isLoading && !error && data &&
                 <>
+                  {
+                    (data.pages.length === 0 || data.pages[0].length === 0) && <div>
+                          <Alert severity="info">
+                              <div>
+                                  You have arrived in the desert of information, go hunt some information.
+                              </div>
+                              <br/>
+                              <div>
+                                  If you haven't installed the browser plugin yet, you can download and install it here.
+                              </div>
+                              <br />
+                              <div>
+                                  <a href={'https://chrome.google.com/webstore/detail/huntly/cphlcmmpbdkadofgcedjgfblmiklbokm'}
+                                     target={'_blank'} className={'text-blue-600 hover:underline'}>Web Store</a>
+                              </div>
+                          </Alert>
+                      </div>
+                  }
                   {data.pages.map((pages, index) =>
                     <React.Fragment key={index}>
                       {pages.map((page) => {
@@ -265,7 +307,7 @@ const PageList = (props: PageListProps) => {
             }
           </div>
         </div>
-        <div className={'w-[270px] sticky mt-3 top-28 self-start'}>
+        <div className={'filter-options w-[270px] sticky mt-3 top-28 self-start'}>
           {props.filterComponent}
         </div>
       </div>

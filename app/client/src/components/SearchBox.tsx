@@ -95,6 +95,11 @@ export default function SearchBox() {
         setSearchText(option.label);
         continue;
       }
+      if(option.type === 'Advanced'){
+        clearText = false;
+        setSearchText(option.keyword);
+        continue;
+      }
       if (!mapResults[option.type]) {
         mapResults[option.type] = [];
       }
@@ -122,9 +127,6 @@ export default function SearchBox() {
               ...searchOptions,
               filteringOptions.current[0]
             ]);
-            if (filteringOptions.current[0].keyword) {
-              setSearchText('');
-            }
             event.preventDefault();
           }
         }
@@ -153,108 +155,111 @@ export default function SearchBox() {
   }, []);
 
   return (
-    <div
-      className={
-        `search-wrapper w-4/12 min-w-[700px] text-xs leading-6 text-slate-400 rounded-md shadow-sm pl-1 pr-1 border-slate-300 border border-solid m-auto ${focus ? "bg-white" : "bg-blue-50"}`
-      }
-    >
-      <form action={'/search'} className={'flex grow items-center'} onSubmit={searchSubmit}>
-        <IconButton aria-label={"search"} type={"submit"} className={''}>
-          <SearchIcon fontSize="small"/>
-        </IconButton>
-        {/*<InputBase name={'q'} type={"text"} className={"w-full peer"} placeholder={'Search'} onFocus={inputFocus}*/}
-        {/*           onChange={inputChange}*/}
-        {/*           onBlur={inputBlur} value={searchText}*/}
-        {/*/>*/}
-        <Autocomplete
-          PaperComponent={CustomPaper}
-          className={'grow'}
-          sx={{
-            "& .MuiInputBase-root": {
-              display: 'flex',
-              alignItems: 'center'
-            },
-            "& input": {
-              paddingBottom: '4px'
-            },
-            "& .MuiAutocomplete-popupIndicator": {
-              p: '4px'
-            }
-          }}
-          multiple
-          id="q"
-          value={searchOptions}
-          inputValue={searchText}
-          onOpen={() => {
-            refetchRecentSearches()
-          }}
-          onChange={(event, newValue: SearchOption[]) => {
-            handleChangeOptions([
-              ...newValue
-            ]);
-          }}
-          filterOptions={filterOptions}
-          filterSelectedOptions={true}
-          onInputChange={inputChange}
-          freeSolo={true}
-          forcePopupIcon={true}
-          onFocus={inputFocus}
-          onBlur={inputBlur}
-          options={allSearchOptions}
-          getOptionLabel={(option: SearchOption) => option.label}
-          groupBy={(option: SearchOption) => option.type}
-          renderGroup={(params) => (
-            <li key={params.key}>
-              <GroupHeader>{params.group}</GroupHeader>
-              <GroupItems>{params.children}</GroupItems>
-            </li>
-          )}
-          renderOption={(props, option: SearchOption) => {
-            return <li {...props} style={{padding: 0}}>
-              <div className={'pl-3 pt-1 pb-1 pr-1 flex items-center cursor-pointer hover:bg-gray-100'}>
-                {option.type === 'Recent' && <Box component={HistoryIcon} color={'gray'}>
-                </Box>}
-                {option.type === 'Type' && <Box component={ArticleIcon} color={'gray'}>
-                </Box>}
-                {option.type === 'Library' && <Box component={LocalLibraryIcon} color={'gray'}>
-                </Box>}
-                {option.type === 'Options' && <Box component={FilterAltIcon} color={'gray'}>
-                </Box>}
-                <span className={'ml-2'}>
+    <div className={'search-wrapper'}>
+      <div
+        className={
+          `search-box w-4/12 min-w-[700px] text-xs leading-6 text-slate-400 rounded-md shadow-sm pl-1 pr-1 border-slate-300 border border-solid ${focus ? "bg-white" : "bg-blue-50"}`
+        }
+      >
+        <form action={'/search'} className={'flex grow items-center'} onSubmit={searchSubmit}>
+          <IconButton aria-label={"search"} type={"submit"} className={''}>
+            <SearchIcon fontSize="small"/>
+          </IconButton>
+          {/*<InputBase name={'q'} type={"text"} className={"w-full peer"} placeholder={'Search'} onFocus={inputFocus}*/}
+          {/*           onChange={inputChange}*/}
+          {/*           onBlur={inputBlur} value={searchText}*/}
+          {/*/>*/}
+          <Autocomplete
+            PaperComponent={CustomPaper}
+            className={'grow'}
+            sx={{
+              "& .MuiInputBase-root": {
+                display: 'flex',
+                alignItems: 'center'
+              },
+              "& input": {
+                paddingBottom: '4px'
+              },
+              "& .MuiAutocomplete-popupIndicator": {
+                p: '4px'
+              }
+            }}
+            multiple
+            id="q"
+            value={searchOptions}
+            inputValue={searchText}
+            onOpen={() => {
+              refetchRecentSearches()
+            }}
+            onChange={(event, newValue: SearchOption[]) => {
+              handleChangeOptions([
+                ...newValue
+              ]);
+            }}
+            filterOptions={filterOptions}
+            filterSelectedOptions={true}
+            onInputChange={inputChange}
+            freeSolo={true}
+            forcePopupIcon={true}
+            onFocus={inputFocus}
+            onBlur={inputBlur}
+            options={allSearchOptions}
+            getOptionLabel={(option: SearchOption) => option.label}
+            groupBy={(option: SearchOption) => option.type}
+            renderGroup={(params) => (
+              <li key={params.key}>
+                <GroupHeader>{params.group}</GroupHeader>
+                <GroupItems>{params.children}</GroupItems>
+              </li>
+            )}
+            renderOption={(props, option: SearchOption) => {
+              return <li {...props} style={{padding: 0}}>
+                <div className={'pl-3 pt-1 pb-1 pr-1 flex items-center cursor-pointer hover:bg-gray-100'}>
+                  {option.type === 'Advanced' && <Box component={SearchIcon} color={'gray'}>
+                  </Box>}
+                  {option.type === 'Recent' && <Box component={HistoryIcon} color={'gray'}>
+                  </Box>}
+                  {option.type === 'Type' && <Box component={ArticleIcon} color={'gray'}>
+                  </Box>}
+                  {option.type === 'Library' && <Box component={LocalLibraryIcon} color={'gray'}>
+                  </Box>}
+                  {option.type === 'Options' && <Box component={FilterAltIcon} color={'gray'}>
+                  </Box>}
+                  <span className={'ml-2'}>
                   {option.label}
                 </span>
-              </div>
-            </li>
-          }}
-          renderTags={(tagValue, getTagProps) =>
-            tagValue.map((option, index) => (
-              <Chip
-                size={'small'}
-                label={option.keyword}
-                {...getTagProps({index})}
-              />
-            ))
-          }
-          style={{width: 500}}
-          renderInput={(params) => {
-            const {InputLabelProps, InputProps, ...rest} = params;
-            // <TextField {...params} name={'q'} placeholder={'Search'} size={"small"} variant={'standard'} fullWidth={true} />
-            return <InputBase {...params.InputProps} {...rest} name={'q'} placeholder={'Search'} type={'text'}
-                              onKeyDown={inputKeyDown} onKeyUp={inputKeyUp}
-                              sx={{}}
-            />;
-          }}
-          popupIcon={<TuneIcon fontSize={'small'} sx={{}}/>}
-        />
-      </form>
-      {/*{*/}
-      {/*  searchText && <IconButton aria-label={'close button'} onClick={clearInput}>*/}
-      {/*    <CloseIcon fontSize={'small'}/>*/}
-      {/*  </IconButton>*/}
-      {/*}*/}
-      {/*<IconButton aria-label={'search filter'}>*/}
-      {/*  <TuneIcon fontSize={'small'}/>*/}
-      {/*</IconButton>*/}
+                </div>
+              </li>
+            }}
+            renderTags={(tagValue, getTagProps) =>
+              tagValue.map((option, index) => (
+                <Chip
+                  size={'small'}
+                  label={option.keyword}
+                  {...getTagProps({index})}
+                />
+              ))
+            }
+            renderInput={(params) => {
+              const {InputLabelProps, InputProps, ...rest} = params;
+              // <TextField {...params} name={'q'} placeholder={'Search'} size={"small"} variant={'standard'} fullWidth={true} />
+              return <InputBase {...params.InputProps} {...rest} name={'q'} placeholder={'Search'} type={'text'}
+                                onKeyDown={inputKeyDown} onKeyUp={inputKeyUp}
+                                sx={{}}
+              />;
+            }}
+            popupIcon={<TuneIcon fontSize={'small'} sx={{}}/>}
+          />
+        </form>
+        {/*{*/}
+        {/*  searchText && <IconButton aria-label={'close button'} onClick={clearInput}>*/}
+        {/*    <CloseIcon fontSize={'small'}/>*/}
+        {/*  </IconButton>*/}
+        {/*}*/}
+        {/*<IconButton aria-label={'search filter'}>*/}
+        {/*  <TuneIcon fontSize={'small'}/>*/}
+        {/*</IconButton>*/}
+      </div>
     </div>
   )
 }
@@ -263,10 +268,12 @@ export default function SearchBox() {
 type SearchOption = {
   keyword: string;
   label: string,
-  type: 'Recent' | 'Type' | 'Library' | 'Options';
+  type: 'Recent' | 'Type' | 'Library' | 'Options' | 'Advanced'
 }
 
 const defaultSearchOptions: SearchOption[] = [
+  {keyword: 'url:', label: 'url:{url}', type: 'Advanced'},
+  {keyword: 'author:', label: 'author:{author}', type: 'Advanced'},
   {keyword: 'tweet', label: 'Tweet', type: 'Type'},
   {keyword: 'github', label: 'Github Repository', type: 'Type'},
   {keyword: 'browser', label: 'Browser History', type: 'Type'},

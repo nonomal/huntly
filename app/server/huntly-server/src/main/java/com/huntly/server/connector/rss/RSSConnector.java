@@ -5,20 +5,18 @@ import com.huntly.interfaces.external.model.CapturePage;
 import com.huntly.server.connector.ConnectorProperties;
 import com.huntly.server.connector.InfoConnector;
 import com.huntly.server.domain.exceptions.ConnectorFetchException;
+import com.huntly.server.util.HttpUtils;
+import com.huntly.server.util.SiteUtils;
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import lombok.extern.slf4j.Slf4j;
-import net.dankito.readability4j.Article;
-import net.dankito.readability4j.Readability4J;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -32,16 +30,14 @@ import java.util.stream.Collectors;
 public class RSSConnector extends InfoConnector {
     private final ConnectorProperties connectorProperties;
 
+    private final OkHttpClient okClient;
+
     private final HttpClient client;
 
     public RSSConnector(ConnectorProperties connectorProperties) {
         this.connectorProperties = connectorProperties;
+        this.okClient = HttpUtils.buildFeedOkHttpClient(connectorProperties.getProxySetting());
         this.client = buildHttpClient(connectorProperties);
-    }
-
-    public RSSConnector(ConnectorProperties connectorProperties, HttpClient httpClient) {
-        this.connectorProperties = connectorProperties;
-        this.client = httpClient;
     }
 
     @Override
@@ -56,7 +52,7 @@ public class RSSConnector extends InfoConnector {
         }
 
         try {
-            SyndFeed feed = FeedUtils.parseFeedUrl(connectorProperties.getSubscribeUrl(), client);
+            SyndFeed feed = FeedUtils.parseFeedUrl(connectorProperties.getSubscribeUrl(), okClient);
             var entries = feed.getEntries();
             List<CapturePage> pages = new ArrayList<>();
             for (var entry : entries) {
@@ -106,26 +102,11 @@ public class RSSConnector extends InfoConnector {
     public CapturePage fetchPageContent(CapturePage capturePage) {
         if (Boolean.TRUE.equals(connectorProperties.getCrawlFullContent())) {
             try {
-                HttpRequest request = HttpRequest.newBuilder().uri(new URI(capturePage.getUrl()))
-                        .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
-                        .build();
-                var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                var responseText = response.body();
-                
-                //HTMLDocument htmlDoc = new HTMLDocument(responseText);
-                //
-                //BoilerpipeExtractor extractor = CommonExtractors.ARTICLE_EXTRACTOR;
-                //TextDocument textDoc = new BoilerpipeSAXInput(htmlDoc.toInputSource()).getTextDocument();
-                //extractor.process(textDoc);
-                //
-                //HTMLHighlighter highlighter = HTMLHighlighter.newExtractingInstance();
-                //highlighter.setOutputHighlightOnly(true);
-                //String article = highlighter.process(textDoc, htmlDoc.toInputSource());
+                String content = SiteUtils.parseArticleContent(capturePage.getUrl(), client);
 
-                Readability4J readability4J = new Readability4J(capturePage.getUrl(), responseText);
-                Article article = readability4J.parse();
-
-                capturePage.setContent(article.getContentWithUtf8Encoding());
+                if (StringUtils.isNotBlank(content)) {
+                    capturePage.setContent(content);
+                }
             } catch (Exception e) {
                 log.error("extract article failed for url: " + capturePage.getUrl(), e);
             }

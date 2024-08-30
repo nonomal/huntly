@@ -4,6 +4,7 @@ import React, {useCallback, useEffect, useState} from "react";
 import {WindowStateListenerType} from "../domain/electronTypes";
 import {IconButton} from "@mui/material";
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import DehazeIcon from '@mui/icons-material/Dehaze';
 import SettingModal from "./SettingModal";
 
 export default function Header() {
@@ -11,11 +12,11 @@ export default function Header() {
   const [fullScreen, setFullScreen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [settingModalOpen, setSettingModalOpen] = useState(false);
-  const inBrowser = !window.electron;
-  const isMac = !inBrowser && window.electron.utilsBridge.isMac;
+  const inElectron = !!window.electron;
+  const isMac = inElectron && window.electron.utilsBridge.isMac;
 
   useEffect(() => {
-    if (inBrowser) {
+    if (!inElectron) {
       return;
     }
     const {utilsBridge} = window.electron;
@@ -51,29 +52,46 @@ export default function Header() {
   const openSettingModal = useCallback(() => {
     setSettingModalOpen(true);
   }, []);
-  
-  const closeSettingModal = useCallback(()=>{
+
+  const closeSettingModal = useCallback(() => {
     setSettingModalOpen(false);
-  },[]);
+  }, []);
+
+  function toggleSidebar() {
+    const rootEl = document.getElementById('root');
+    rootEl?.classList.toggle('toggle-sidebar');
+  }
 
   return <header className="title_bar">
     {!isMac && (
-      <span className="pl-4 flex items-center text-sky-600 absolute font-bold">
-              <EnergySavingsLeafIcon className="h-4 w-4 mr-1"/>
-              Huntly
-            </span>
+      <span className="logo-area pl-4 flex items-center text-sky-600 absolute font-bold">
+        <span className={'slide-button'}>
+          <IconButton onClick={toggleSidebar}>
+            <DehazeIcon/>
+          </IconButton>
+        </span>
+        <EnergySavingsLeafIcon className="h-6 w-6 mr-1"/>
+        <span className={'logo-text'}>
+          Huntly
+        </span>
+      </span>
     )}
 
     <SearchBox/>
 
-    <IconButton className={'mr-2 absolute right-0'} onClick={openSettingModal}>
-      <SettingsOutlinedIcon className={'text-sky-600'}/>
-    </IconButton>
+    {
+      (!inElectron || isMac) && <IconButton className={'setting-area mr-2 absolute right-0'} onClick={openSettingModal}>
+        <SettingsOutlinedIcon className={'text-sky-600'}/>
+      </IconButton>
+    }
 
     <SettingModal open={settingModalOpen} onClose={closeSettingModal}></SettingModal>
 
-    {!isMac && !inBrowser && (
+    {!isMac && inElectron && (
       <div className="absolute right-0">
+        <IconButton className={'mr-2 nodrag'} onClick={openSettingModal}>
+          <SettingsOutlinedIcon className={'text-sky-600'}/>
+        </IconButton>
         <button className="btn-size-ctrl" onClick={minimize}>
           {/* <HorizontalRuleIcon fontSize="small" /> */}
           <svg viewBox="0 0 11 11">

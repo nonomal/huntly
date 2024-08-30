@@ -1,10 +1,16 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {CssBaseline, StyledEngineProvider} from "@mui/material";
 import Sidebar from "./Sidebar/Sidebar";
-import {Outlet, ScrollRestoration} from "react-router-dom";
+import {Outlet, ScrollRestoration, useLocation} from "react-router-dom";
 import Header from "./Header";
 
 const Layout = () => {
+  const location = useLocation();
+  useEffect(() => {
+    const rootEl = document.getElementById('root');
+    rootEl?.classList.remove('toggle-sidebar');
+  },[location]);
+  
   return (
     <StyledEngineProvider injectFirst>
       <CssBaseline/>
@@ -21,7 +27,6 @@ const Layout = () => {
       />
       <div className="h-full layoutRoot">
         <Header />
-
         <div className="main_window flex flex-row">
           <div className="main_sidebar">
             <Sidebar/>
@@ -30,7 +35,6 @@ const Layout = () => {
             <Outlet/>
           </div>
         </div>
-
       </div>
     </StyledEngineProvider>
   );

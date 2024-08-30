@@ -36,14 +36,12 @@ public class CapturePageService extends BasePageService {
 
     private final TwitterUserSettingRepository twitterUserSettingRepository;
 
-    private final PageService pageService;
 
-    public CapturePageService(PageRepository pageRepository, LuceneService luceneService, SourceRepository sourceRepository, ConnectorRepository connectorRepository, TwitterUserSettingRepository twitterUserSettingRepository, PageService pageService) {
+    public CapturePageService(PageRepository pageRepository, LuceneService luceneService, SourceRepository sourceRepository, ConnectorRepository connectorRepository, TwitterUserSettingRepository twitterUserSettingRepository) {
         super(pageRepository, luceneService);
         this.sourceRepository = sourceRepository;
         this.connectorRepository = connectorRepository;
         this.twitterUserSettingRepository = twitterUserSettingRepository;
-        this.pageService = pageService;
     }
 
     public Page save(CapturePage capturePage) {
@@ -116,14 +114,17 @@ public class CapturePageService extends BasePageService {
             var currentPage = existPage.get();
             currentPage.setContent(page.getContent());
             currentPage.setAuthor(page.getAuthor());
+            currentPage.setAuthorScreenName(page.getAuthorScreenName());
             currentPage.setContentType(page.getContentType());
             currentPage.setPageJsonProperties(page.getPageJsonProperties());
+            currentPage.setCategory(page.getCategory());
+            currentPage.setVoteScore(page.getVoteScore());
             page = currentPage;
         } else {
             page.setCreatedAt(Instant.now());
         }
         // tweet auto save
-        String toUseScreenName = page.getAuthor();
+        String toUseScreenName = page.getAuthorScreenName();
         if (Objects.equals(page.getCategory(), "like") && StringUtils.isNotBlank(browserScreenName)) {
             toUseScreenName = browserScreenName;
         } else if (Objects.equals(page.getCategory(), "bookmark") && StringUtils.isNotBlank(loginScreenName)) {
@@ -138,7 +139,7 @@ public class CapturePageService extends BasePageService {
             } else if (Objects.equals(page.getCategory(), "like")) {
                 saveTypes.add(setting.getLikeToLibraryType());
             }
-            if (Objects.equals(page.getAuthor(), setting.getScreenName())) {
+            if (Objects.equals(page.getAuthorScreenName(), setting.getScreenName())) {
                 saveTypes.add(setting.getTweetToLibraryType());
             }
             for (Integer saveType : saveTypes) {
@@ -146,16 +147,36 @@ public class CapturePageService extends BasePageService {
                 if (librarySaveType != null) {
                     switch (librarySaveType) {
                         case STARRED:
-                            pageService.setPageStarred(page);
+                            page.setStarred(true);
+                            page.setLibrarySaveStatus(LibrarySaveStatus.SAVED.getCode());
+                            if (page.getSavedAt() == null) {
+                                page.setSavedAt(Instant.now());
+                            }
+                            if (page.getStarredAt() == null) {
+                                page.setStarredAt(Instant.now());
+                            }
                             break;
                         case READ_LATER:
-                            pageService.setPageReadLater(page);
+                            page.setReadLater(true);
+                            page.setLibrarySaveStatus(LibrarySaveStatus.SAVED.getCode());
+                            if (page.getSavedAt() == null) {
+                                page.setSavedAt(Instant.now());
+                            }
+                            if (page.getReadLaterAt() == null) {
+                                page.setReadLaterAt(Instant.now());
+                            }
                             break;
                         case MY_LIST:
-                            pageService.setPageLibrarySaveStatus(page, LibrarySaveStatus.SAVED);
+                            page.setLibrarySaveStatus(LibrarySaveStatus.SAVED.getCode());
+                            if (page.getSavedAt() == null) {
+                                page.setSavedAt(Instant.now());
+                            }
                             break;
                         case ARCHIVE:
-                            pageService.setPageLibrarySaveStatus(page, LibrarySaveStatus.ARCHIVED);
+                            page.setLibrarySaveStatus(LibrarySaveStatus.ARCHIVED.getCode());
+                            if (page.getArchivedAt() == null) {
+                                page.setArchivedAt(Instant.now());
+                            }
                             break;
                         default:
                             break;
@@ -252,10 +273,7 @@ public class CapturePageService extends BasePageService {
         Source source;
         if (existSource.isEmpty()) {
             source = new Source();
-            source.setDisplaySequence(0);
-            source.setFolderId(0);
             source.setDomain(page.getDomain());
-            source.setSilent(true);
         } else {
             source = existSource.get();
         }
@@ -268,9 +286,13 @@ public class CapturePageService extends BasePageService {
         if (StringUtils.isNotBlank(page.getFaviconUrl())) {
             source.setFaviconUrl(page.getFaviconUrl());
         }
-        if (Boolean.FALSE.equals(source.getSubscribed()) && StringUtils.isNotBlank(page.getSubscribeUrl())) {
+        if (StringUtils.isNotBlank(page.getSubscribeUrl())) {
             source.setSubscribeUrl(page.getSubscribeUrl());
         }
         return sourceRepository.save(source);
+    }
+
+    public Page findByUrl(String url) {
+        return pageRepository.findTop1ByUrl(url).orElse(null);
     }
 }

@@ -8,15 +8,22 @@ import navLabels, {NavLabel} from "../components/Sidebar/NavLabels";
 import RssFeedIcon from "@mui/icons-material/RssFeed";
 import EnergySavingsLeafIcon from "@mui/icons-material/EnergySavingsLeaf";
 import {ConnectorType} from "../interfaces/connectorType";
-import {useState} from "react";
+import React, {useState} from "react";
 import PageFilters, {PageFilterOptions} from "../components/PageFilters";
+import {IconButton} from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import FeedsFormDialog from "../components/SettingModal/FeedsFormDialog";
+import {getPageListFilter} from "../domain/utils";
 
 const ConnectorList = () => {
   const {id} = useParams<"id">();
+  const [editFeedsId, setEditFeedsId] = React.useState<number>(null);
+
   const {
     isLoading,
     error,
     data: connector,
+    refetch: refetchConnector
   } = useQuery(["connector_info", id], async () => (await ConnectorControllerApiFactory().getConnectorByIdUsingGET(safeInt(id))).data);
 
   function getNavLabel(connector: Connector): NavLabel {
@@ -24,7 +31,12 @@ const ConnectorList = () => {
       if (connector.type === ConnectorType.GITHUB) {
         return {...navLabels.github, labelText: connector.name, linkTo: '/connector/' + id};
       } else if (connector.type == ConnectorType.RSS) {
-        return {labelIcon: RssFeedIcon, labelText: connector.name, linkTo: '/connector/' + id};
+        return {
+          labelIcon: RssFeedIcon,
+          labelText: connector.name,
+          linkTo: '/connector/' + id,
+          iconUrl: connector.iconUrl
+        };
       }
     }
     return {labelText: '', labelIcon: EnergySavingsLeafIcon};
@@ -41,20 +53,38 @@ const ConnectorList = () => {
       label: 'Recently connected'
     }],
     asc: false,
+    hideContentTypeFilter: true
   })
 
   function handleFilterChange(options: PageFilterOptions) {
     setPageFilterOptions(options);
   }
 
+  function navLabelArea() {
+    if (connector?.type === ConnectorType.RSS) {
+      return <IconButton className={'ml-1'} onClick={() => {
+        setEditFeedsId(connector.id)
+      }}>
+        <EditIcon fontSize={"small"}/>
+      </IconButton>
+    }
+    return null;
+  }
+
   return (
     <MainContainer>
+      {
+        editFeedsId != null && <FeedsFormDialog feedsId={editFeedsId} onClose={() => {
+          setEditFeedsId(null);
+          refetchConnector();
+        }}/>
+      }
       <PageList navLabel={getNavLabel(connector)}
+                navLabelArea={navLabelArea()}
                 filters={{
+                  ...getPageListFilter(pageFilterOptions),
                   connectorId: safeInt(id),
-                  sort: pageFilterOptions.defaultSortValue,
                   markRead: false,
-                  asc: pageFilterOptions.asc
                 }}
                 onMarkAllAsRead={markAllAsRead} showMarkReadOption={true}
                 filterComponent={<PageFilters options={pageFilterOptions} onChange={handleFilterChange}/>}

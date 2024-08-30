@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from "react";
-import ReactDOM from "react-dom";
 import { createRoot } from 'react-dom/client';
 import './popup.css';
 import EnergySavingsLeafIcon from "@mui/icons-material/EnergySavingsLeaf";
@@ -92,8 +91,10 @@ const Popup = () => {
         const tab = tabs[0];
         if (tab) {
           chrome.tabs.sendMessage(tab.id, {type: 'parse_doc'}, function (response) {
-            setPage(response.page);
-            loadPageOperateResult(autoSavedPageId, response.page.url);
+            if(response) {
+              setPage(response.page);
+              loadPageOperateResult(autoSavedPageId, response.page.url);
+            }
           });
         }
       });

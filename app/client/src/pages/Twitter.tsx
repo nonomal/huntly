@@ -3,6 +3,7 @@ import navLabels from "../components/Sidebar/NavLabels";
 import MainContainer from "../components/MainContainer";
 import React, {useState} from "react";
 import PageFilters, {PageFilterOptions} from "../components/PageFilters";
+import {getPageListFilter} from "../domain/utils";
 
 export default function Twitter() {
   const [pageFilterOptions, setPageFilterOptions] = useState<PageFilterOptions>({
@@ -16,8 +17,12 @@ export default function Twitter() {
     }, {
       value: 'LAST_READ_AT',
       label: 'Recently read'
+    }, {
+      value: 'VOTE_SCORE',
+      label: 'Most popular'
     }],
     asc: false,
+    hideContentTypeFilter: true
   })
 
   function handleFilterChange(options: PageFilterOptions) {
@@ -26,7 +31,10 @@ export default function Twitter() {
 
   return <MainContainer>
     <PageList navLabel={navLabels.twitter}
-              filters={{contentType: 'TWEET', sort: pageFilterOptions.defaultSortValue, asc: pageFilterOptions.asc}}
+              filters={{
+                ...getPageListFilter(pageFilterOptions),
+                contentType: 'TWEET'
+              }}
               buttonOptions={{markRead: false}}
               filterComponent={<PageFilters options={pageFilterOptions} onChange={handleFilterChange}/>}/>
   </MainContainer>;

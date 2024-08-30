@@ -25,7 +25,7 @@ function urlPattern(url: string, category: string): CategoryUrlPattern {
 let loginScreenName = '';
 
 const siteInterceptorSettings: { [domain: string]: InterceptorSetting[] } = {
-  'twitter.com': [{
+  'x.com': [{
     urlPatterns: [urlPattern('graphql/.+/Bookmarks(\\?|$)', 'bookmark'),
       urlPattern('graphql/.+/.+Timeline(\\?|$)', 'timeline'),
       urlPattern('graphql/.+/UserTweets(\\?|$)', 'userTweets'),
@@ -62,7 +62,11 @@ const siteInterceptorSettings: { [domain: string]: InterceptorSetting[] } = {
 }
 
 function matchInterceptorSetting(responseUrl: string): MatchedSetting {
-  const settings = siteInterceptorSettings[document.domain];
+  let docDomain = document.domain;
+  if(docDomain === "twitter.com"){
+    docDomain = "x.com";
+  }
+  const settings = siteInterceptorSettings[docDomain];
   const currentUrl = responseUrl.toLowerCase();
   if (settings) {
     for (const setting of settings) {
@@ -109,10 +113,10 @@ function markReadTweetsInView() {
 
 function isElementInViewport(el: Element) {
   let rect = el.getBoundingClientRect();
+  const windowHeight = (window.innerHeight || document.documentElement.clientHeight);
   return (
-    rect.top >= 0 &&
+    rect.top >= 0 && rect.top <= windowHeight && (rect.top + 100) <= windowHeight &&
     rect.left >= 0 &&
-    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
     rect.right <= (window.innerWidth || document.documentElement.clientWidth)
   );
 }
@@ -120,7 +124,7 @@ function isElementInViewport(el: Element) {
 //endregion
 
 function interceptTwitterSite() {
-  const supportDomains = ['twitter.com'];
+  const supportDomains = ['twitter.com', 'x.com'];
   const domain = document.domain;
   if (supportDomains.indexOf(domain) >= 0) {
     new RequestInterceptor().enable(handleResponse);
